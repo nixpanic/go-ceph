@@ -106,3 +106,25 @@ func (image *Image) GetFeatures() (features uint64, err error) {
 
 	return features, nil
 }
+
+// UpdateFeatures updates the features on the Image.
+//
+// Implements:
+//   int rbd_update_features(rbd_image_t image, uint64_t features,
+//                           uint8_t enabled);
+func (image *Image) UpdateFeatures(features uint64, enabled bool) error {
+	if image.image == nil {
+		return RbdErrorImageNotOpen
+	}
+
+	cEnabled := C.uint8_t(0)
+	if enabled {
+		cEnabled = 1
+	}
+	ret := C.rbd_update_features(image.image, (C.uint64_t)(features), cEnabled)
+	if ret < 0 {
+		return RBDError(ret)
+	}
+
+	return nil
+}
