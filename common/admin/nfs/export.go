@@ -66,12 +66,7 @@ type ExportResult struct {
 	Mode           string `json:"mode"`
 }
 
-type cephFSExportFields struct {
-	Prefix string `json:"prefix"`
-	Format string `json:"format"`
 
-	CephFSExportSpec
-}
 
 // FSALInfo describes NFS-Ganesha specific FSAL properties of an export.
 type FSALInfo struct {
@@ -140,12 +135,27 @@ func parseExportInfo(res commands.Response) (ExportInfo, error) {
 func (nfsa *Admin) CreateCephFSExport(spec CephFSExportSpec) (
 	*ExportResult, error) {
 	// ---
-	f := &cephFSExportFields{
-		Prefix:           "nfs export create cephfs",
-		Format:           "json",
-		CephFSExportSpec: spec,
+	m := map[string]any{
+		"prefix":      "nfs export create cephfs",
+		"format":      "json",
+		"fsname":      spec.FileSystemName,
+		"cluster_id":  spec.ClusterID,
+		"pseudo_path": spec.PseudoPath,
+		"readonly":    spec.ReadOnly,
 	}
-	return parseExportResult(commands.MarshalMgrCommand(nfsa.conn, f))
+	if spec.Path != "" {
+		m["path"] = spec.Path
+	}
+	if len(spec.ClientAddr) > 0 {
+		m["client_addr"] = spec.ClientAddr
+	}
+	if spec.Squash != "" {
+		m["squash"] = spec.Squash
+	}
+	if len(spec.SecType) > 0 {
+		m["sectype"] = spec.SecType
+	}
+	return parseExportResult(commands.MarshalMgrCommand(nfsa.conn, m))
 }
 
 const delSucc = "Successfully deleted export"
